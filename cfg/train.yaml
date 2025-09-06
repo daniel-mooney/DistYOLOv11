@@ -9,7 +9,7 @@ data: /home/daniel-mooney/Documents/University/Thesis/Gaussian_YOLOv11/cfg/data.
 epochs: 100
 imgsz: [640, 480]
 batch: 26
-optimizer: SGD              # ["SGD","Adam","AdamW"]
+optimizer: Adam              # ["SGD","Adam","AdamW"]
 lr0: 0.1                   # initial LR
 lrf: 0.1                   # final LR fraction (cosine if cos_lr: true)
 momentum: 0.937
