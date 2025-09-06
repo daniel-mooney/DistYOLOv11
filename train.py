@@ -1,5 +1,4 @@
 from ultralytics import YOLO
-import yaml
 import sys
 
 def main() -> None:

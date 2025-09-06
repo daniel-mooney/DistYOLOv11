@@ -1,0 +1,11 @@
+weights: /home/daniel-mooney/Documents/University/Thesis/Gaussian_YOLOv11/runs/detect/exp_y11_custom3/weights/best.pt
+data: /home/daniel-mooney/Documents/University/Thesis/Gaussian_YOLOv11/cfg/data.yaml
+split: test
+
+
+# --- Inference/val knobs ---
+imgsz: 640
+conf: 0.25
+iou: 0.7
+device: 0          # GPU id or "cpu"
+batch: 16          # for val

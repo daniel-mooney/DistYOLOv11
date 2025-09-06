@@ -6,12 +6,12 @@ model: yolo11n.pt
 data: /home/daniel-mooney/Documents/University/Thesis/Gaussian_YOLOv11/cfg/data.yaml
 
 # core schedule
-epochs: 20
+epochs: 100
 imgsz: [640, 480]
-batch: 16
+batch: 26
 optimizer: SGD              # ["SGD","Adam","AdamW"]
-lr0: 0.01                   # initial LR
-lrf: 0.01                   # final LR fraction (cosine if cos_lr: true)
+lr0: 0.1                   # initial LR
+lrf: 0.1                   # final LR fraction (cosine if cos_lr: true)
 momentum: 0.937
 weight_decay: 0.0005
 warmup_epochs: 3.0
