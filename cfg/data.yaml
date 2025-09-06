@@ -1,0 +1,4 @@
+train: /home/daniel-mooney/Documents/University/Thesis/Gaussian_YOLOv11/data/train.txt
+val: /home/daniel-mooney/Documents/University/Thesis/Gaussian_YOLOv11/data/val.txt
+nc: 1
+names: [lander]
