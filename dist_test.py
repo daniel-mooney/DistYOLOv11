@@ -1,8 +1,11 @@
 from distyolo import DistYOLO
+from distyolo.results import BoxDistribution
+from typing import List
 import yaml
 import sys
 import torch
 import cv2
+import numpy as np
 
 
 def main(cfg_yaml: str) -> None:
@@ -41,13 +44,28 @@ def main(cfg_yaml: str) -> None:
         )
 
         for pred in preds:
-            for box in pred.boxes:
+            boxes: List[BoxDistribution] = pred.boxes
+            for box in boxes:
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 cls_id = int(box.cls[0])
                 conf_score = box.conf[0].item()
                 label = f"{data_cfg['names'][cls_id]} {conf_score:.2f}"
                 cv2.rectangle(disp, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.putText(disp, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+                dist = box.distribution[0].cpu().numpy()
+                l, t,r, b = np.split(dist, 4)
+
+                # Perform softmax over each side's distribution
+                l = np.exp(l) / np.sum(np.exp(l))
+                t = np.exp(t) / np.sum(np.exp(t))
+                r = np.exp(r) / np.sum(np.exp(r))
+                b = np.exp(b) / np.sum(np.exp(b))
+
+                print(f"left: {l}")
+                print(f"top: {t}")
+                print(f"right: {r}")
+                print(f"bottom: {b}")
 
         cv2.imshow(win, disp)
         k = cv2.waitKey(0) & 0xFF
@@ -57,5 +75,7 @@ def main(cfg_yaml: str) -> None:
 
     cv2.destroyAllWindows()
 if __name__ == "__main__":
+    np.set_printoptions(precision=2, suppress=True, linewidth=200)
+
     cfg_yaml = sys.argv[1]
     main(cfg_yaml)
