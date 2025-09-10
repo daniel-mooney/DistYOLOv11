@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import override
 
 import torch
@@ -47,3 +48,19 @@ class DetectDistribution(Detect):
         
         # dbox is mean of box distribution
         return torch.cat((dbox, cls.sigmoid(), box_dist), 1)
+
+    @classmethod
+    def from_detect(cls, detect: Detect) -> DetectDistribution:
+        """ Create a DetectDistribution head from a Detect head 
+
+        Args:
+            d (Detect): The detect head
+
+        Returns:
+            DetectDistribution: New DetectDistribution head
+        """
+        new = cls.__new__(cls)
+        new.__dict__ = detect.__dict__.copy()
+
+        new.load_state_dict(detect.state_dict(), strict=False)
+        return new
