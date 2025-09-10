@@ -15,6 +15,7 @@ def load_model(model_cfg: str) -> YOLO:
     model = YOLO(model_cfg)
 
     # Swap out the model head
+    # TODO: Note that DFL layer might be getting copied over...
     detect: Detect = model.model.model[-1]
     model.model.model[-1] = DetectDistribution.from_detect(detect)
 
