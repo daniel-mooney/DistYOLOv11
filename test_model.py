@@ -6,6 +6,9 @@ import sys
 import yaml
 from pathlib import Path
 from typing import List, Optional
+import numpy as np
+
+from distyolo import DistYOLO
 
 
 # ---------- Config / data helpers ----------
@@ -143,7 +146,6 @@ def compute_metrics(model: YOLO, cfg: dict) -> dict:
 def viewer_loop(model: YOLO, cfg: dict):
     imgs = list_test_images_from_txt(cfg["data"], cfg.get("split", "test"))
     names = get_class_names_from_data_yaml(cfg["data"])
-
     conf = cfg.get("conf", 0.25)
     iou = cfg.get("iou", 0.7)
     imgsz = cfg.get("imgsz", 640)
@@ -152,10 +154,9 @@ def viewer_loop(model: YOLO, cfg: dict):
     idx = 0
     show_gt = True
     win = "YOLOv11 Test Viewer"
-    cv2.namedWindow(win, cv2.WINDOW_NORMAL | cv2.WINDOW_GUI_EXPANDED)
+    cv2.namedWindow(win, cv2.WINDOW_NORMAL)  # no GUI_EXPANDED
     help_text = "Keys: n/→ next | p/← prev | g toggle GT | s save | q quit"
 
-    print(type(model.model))
 
     while True:
         img_path = imgs[idx]
@@ -166,12 +167,11 @@ def viewer_loop(model: YOLO, cfg: dict):
             iou=iou,
             imgsz=imgsz,
             device=device,
-            verbose=False,
+            show=False, save=False, stream=False, verbose=False, visualize=False
         )
 
-        disp = cv2.imread(img_path) if not preds else preds[0].plot()  # BGR with preds
+        disp = cv2.imread(img_path) if not preds else preds[0].plot()  # BGR
         if disp is None:
-            # Skip unreadable image
             idx = (idx + 1) % len(imgs)
             continue
 
@@ -211,11 +211,11 @@ def main() -> None:
     cfg_path = sys.argv[1] if len(sys.argv) > 1 else "test.yaml"
     cfg = load_cfg(cfg_path)
 
-    model = YOLO(cfg["weights"])
+    model = DistYOLO(cfg["weights"])
 
     # 1) Compute + print metrics in the requested format
-    metrics = compute_metrics(model, cfg)
-    print("results_dict:", metrics)
+    # metrics = compute_metrics(model, cfg)
+    # print("results_dict:", metrics)
 
     # 2) Launch interactive viewer over images listed in test.txt
     viewer_loop(model, cfg)

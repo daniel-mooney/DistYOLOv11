@@ -6,7 +6,7 @@ model: yolo11s.pt
 data: /home/daniel-mooney/Documents/University/Thesis/Gaussian_YOLOv11/cfg/data.yaml
 
 # core schedule
-epochs: 100
+epochs: 5
 imgsz: [640, 480]
 batch: 14
 optimizer: SGD              # ["SGD","Adam","AdamW"]

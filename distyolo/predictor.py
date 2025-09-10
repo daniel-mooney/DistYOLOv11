@@ -6,11 +6,7 @@ from.results import ResultsDistribution
 
 
 class DetectionDistributionPredictor(DetectionPredictor):
-    # @override
-    # def postprocess(self, preds, img, orig_imgs, **kwargs):
-    #     print(f"preds len: {len(preds)}, preds[0] shape: {preds[0].shape}")
-    #     return super().postprocess(preds, img, orig_imgs, **kwargs)
-
+    @override
     def postprocess(self, preds, img, orig_imgs, **kwargs):
         """
         Post-process predictions and return a list of Results objects.
