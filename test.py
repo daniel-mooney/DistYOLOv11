@@ -155,6 +155,8 @@ def viewer_loop(model: YOLO, cfg: dict):
     cv2.namedWindow(win, cv2.WINDOW_NORMAL | cv2.WINDOW_GUI_EXPANDED)
     help_text = "Keys: n/→ next | p/← prev | g toggle GT | s save | q quit"
 
+    print(type(model.model))
+
     while True:
         img_path = imgs[idx]
 

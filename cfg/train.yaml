@@ -2,14 +2,14 @@ task: detect
 mode: train
 
 # data & model
-model: yolo11n.pt
+model: yolo11s.pt
 data: /home/daniel-mooney/Documents/University/Thesis/Gaussian_YOLOv11/cfg/data.yaml
 
 # core schedule
 epochs: 100
 imgsz: [640, 480]
-batch: 26
-optimizer: Adam              # ["SGD","Adam","AdamW"]
+batch: 14
+optimizer: SGD              # ["SGD","Adam","AdamW"]
 lr0: 0.1                   # initial LR
 lrf: 0.1                   # final LR fraction (cosine if cos_lr: true)
 momentum: 0.937
@@ -23,7 +23,7 @@ patience: 50                # early stop
 device: 0                   # GPU id or "cpu"
 workers: 8
 project: runs/detect
-name: exp_y11_custom
+name: exp_y11_custom_small
 val: true
 plots: true
 seed: 0
