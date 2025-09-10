@@ -1,22 +1,30 @@
 from ultralytics import YOLO
+from ultralytics.models import yolo     # module, not class
 from ultralytics.nn.modules.head import Detect
+from ultralytics.nn.tasks import DetectionModel
+from typing import override, Any
+
 from .head import DetectDistribution
+from .predictor import DetectionDistributionPredictor
 
 
-def load_model(model_cfg: str) -> YOLO:
-    """Loads a DistYOLO model
+class DistYOLO(YOLO):
+    def __init__(self, model = "yolo11n.pt", task = None, verbose = False):
+        super().__init__(model, task, verbose)
 
-    Args:
-        model_cfg (str): yaml or pt file specifying the model architecture.
+        # Swap out the model head
+        detect: Detect = self.model.model[-1]
+        self.model.model[-1] = DetectDistribution.from_detect(detect)
 
-    Returns:
-        YOLO: The configured model
-    """
-    model = YOLO(model_cfg)
+    @override
+    @property
+    def task_map(self) -> dict[str, dict[str, Any]]:
+        t_map = super().task_map
+        t_map["detect"] = {
+            "model": DetectionModel,
+            "trainer": yolo.detect.DetectionTrainer,
+            "validator": yolo.detect.DetectionValidator,
+            "predictor": DetectionDistributionPredictor,
+        }
 
-    # Swap out the model head
-    # TODO: Note that DFL layer might be getting copied over...
-    detect: Detect = model.model.model[-1]
-    model.model.model[-1] = DetectDistribution.from_detect(detect)
-
-    return model
+        return t_map

@@ -1,4 +1,4 @@
-from typing import override
+from typing import override, Tuple
 
 from ultralytics.engine.results import Results, Boxes, BaseTensor
 import numpy as np
@@ -15,9 +15,8 @@ class ResultsDistribution(Results):
         orig_img: np.ndarray,
         path: str,
         names: dict[int, str],
-        boxes: torch.Tensor | None = None,
+        boxes: torch.Tensor,
         probs: torch.Tensor | None = None,
-        bbox_dist: torch.Tensor | None = None,
         keypoints: torch.Tensor | None = None,
         speed: dict[str, float] | None = None,
     ) -> None:
@@ -28,16 +27,22 @@ class ResultsDistribution(Results):
             orig_img (np.ndarray): The original image as a numpy array.
             path (str): The path to the image file.
             names (dict): A dictionary of class names.
-            boxes (torch.Tensor | None): A 2D tensor of bounding box coordinates for each detection.
+            boxes (torch.Tensor): A 2D tensor of bounding box coordinates for each detection.
                 Should be in the xyxy format. Note that Ultralytics performs the conversion from xywh to xyxy
                 in the non-max suppression function.
             probs (torch.Tensor | None): A 1D tensor of probabilities of each class for classification task.
-            bbox_dist (torch.Tensor | None): A 2D tensor of bounding box distribution parameters for each detection.
             keypoints (torch.Tensor | None): A 2D tensor of keypoint coordinates for each detection.
             speed (dict | None): A dictionary containing preprocess, inference, and postprocess speeds (ms/image).
         """
-        super().__init__(orig_img, path, names, boxes, probs, keypoints, speed)
-        self.boxes = BoxDistribution(boxes, bbox_dist, self.orig_shape)  # Overwrite boxes with BoxDistribution
+        super().__init__(
+            orig_img,
+            path,
+            names,
+            probs=probs,
+            keypoints=keypoints,
+            speed=speed
+        )
+        self.boxes = BoxDistribution(boxes, self.orig_shape)  # Overwrite boxes with BoxDistribution
     
     @override
     def plot(
@@ -100,7 +105,8 @@ class BoxDistribution(Boxes):
     def __init__(
         self,
         bbox_dist: torch.Tensor | np.ndarray,
-        orig_shape: tuple[int, int]
+        orig_shape: tuple[int, int],
+        max_reg: int = 16
     ) -> None:
         """
         Initialise the BoxDistribution class with detection box data.
@@ -108,9 +114,10 @@ class BoxDistribution(Boxes):
         Args:
             bbox_dist (torch.Tensor | np.ndarray): A tensor or numpy array with detection boxes of shape
                 (num_boxes, 6 + 4 * reg_max) or (num_boxes, 7+ 4 * reg_max). Columns should contain
-                [x1, y1, x2, y2, confidence, class, l_dist, t_dist, b_dist, r_dist ..., (optional) track_id].
+                [x1, y1, x2, y2, (optional) track_id, confidence, class, l_dist, t_dist, r_dist, b_dist].
                 Each of the bbox side distributions have a length equal to the number of DFL bins i.e. reg_max
             orig_shape (tuple[int, int]): The original image shape as (height, width). Used for normalization.
+            max_reg (int): DFL channels
 
         Attributes:
             data (torch.Tensor): The raw tensor containing detection boxes and their associated data.
@@ -121,11 +128,12 @@ class BoxDistribution(Boxes):
         if bbox_dist.ndim == 1:
             bbox_dist = bbox_dist[None, :]
         
-        BaseTensor.__init__(bbox_dist, orig_shape)      # Grandparent constructor
+        BaseTensor.__init__(self, bbox_dist, orig_shape)      # Grandparent constructor
 
         n_box_vars = bbox_dist.shape[-1]
         self.is_track = n_box_vars % 2    # Odd when track 
         self.orig_shape = orig_shape
+        self.max_reg = max_reg
     
     @override
     @property
@@ -143,8 +151,7 @@ class BoxDistribution(Boxes):
             >>> print(conf_scores)
             tensor([0.9000])
         """
-        idx = 5
-        return self.data[:, idx] if self.is_track else self.data[:, idx-1]
+        return self.data[:, -4*self.max_reg - 2]
 
     @override
     @property
@@ -162,8 +169,7 @@ class BoxDistribution(Boxes):
             >>> class_ids = boxes.cls
             >>> print(class_ids)  # tensor([0., 2., 1.])
         """
-        idx = 6
-        return self.data[:, idx] if self.is_track else self.data[:, idx-1]
+        return self.data[:, -4*self.max_reg - 1]
     
     @override
     @property
@@ -189,4 +195,24 @@ class BoxDistribution(Boxes):
             - This property is only available when tracking is enabled (i.e., when `is_track` is True).
             - The tracking IDs are typically used to associate detections across multiple frames in video analysis.
         """
-        return self.data[:, 4] if self.is_track else None
+        return self.data[:, -4 * self.max_reg - 3]
+
+    @property
+    def distribution(self) -> torch.Tensor | np.ndarray:
+        """
+        Return the bounding box distribution parameters for each detection box.
+
+        Returns:
+            (torch.Tensor | np.ndarray): A 2D tensor or array containing the bounding box distribution parameters.
+                The shape is (N, 4 * reg_max), where N is the number of boxes and reg_max is the number of DFL bins.
+                The distribution parameters are ordered as [l_dist, t_dist, r_dist, b_dist] for each box, where each
+                side distribution has a length equal to reg_max.
+
+        Examples:
+            >>> results = model("image.jpg")
+            >>> boxes = results[0].boxes
+            >>> bbox_dists = boxes.distribution
+            >>> print(bbox_dists.shape)  # e.g., torch.Size([3, 64]) for reg_max=16
+            >>> top_dist = bbox_dists[0, 1*16: 2*16]  # Top side distribution for the first box
+        """
+        return self.data[:, -4 * self.max_reg:]

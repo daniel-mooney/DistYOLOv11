@@ -1,10 +1,11 @@
-import distyolo
+from distyolo import DistYOLO
 
 
 def main() -> None:
-    model = distyolo.load_model("yolo11s.pt")
+    model = DistYOLO("yolo11s.pt")
 
-    print(model)
+    results = model.predict()
+    # print(results)
 
 if __name__ == "__main__":
     main()
