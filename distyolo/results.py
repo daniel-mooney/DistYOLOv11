@@ -114,7 +114,7 @@ class BoxDistribution(Boxes):
         Args:
             bbox_dist (torch.Tensor | np.ndarray): A tensor or numpy array with detection boxes of shape
                 (num_boxes, 6 + 4 * reg_max) or (num_boxes, 7+ 4 * reg_max). Columns should contain
-                [x1, y1, x2, y2, (optional) track_id, confidence, class, l_dist, t_dist, r_dist, b_dist].
+                [x1, y1, x2, y2, (optional) track_id, confidence, class, stride, l_dist, t_dist, r_dist, b_dist].
                 Each of the bbox side distributions have a length equal to the number of DFL bins i.e. reg_max
             orig_shape (tuple[int, int]): The original image shape as (height, width). Used for normalization.
             max_reg (int): DFL channels
@@ -131,7 +131,7 @@ class BoxDistribution(Boxes):
         BaseTensor.__init__(self, bbox_dist, orig_shape)      # Grandparent constructor
 
         n_box_vars = bbox_dist.shape[-1]
-        self.is_track = n_box_vars % 2    # Odd when track 
+        self.is_track = n_box_vars % 2 == 0    # Even when track 
         self.orig_shape = orig_shape
         self.max_reg = max_reg
     
@@ -151,7 +151,7 @@ class BoxDistribution(Boxes):
             >>> print(conf_scores)
             tensor([0.9000])
         """
-        return self.data[:, -4*self.max_reg - 2]
+        return self.data[:, -4*self.max_reg - 3]
 
     @override
     @property
@@ -169,7 +169,7 @@ class BoxDistribution(Boxes):
             >>> class_ids = boxes.cls
             >>> print(class_ids)  # tensor([0., 2., 1.])
         """
-        return self.data[:, -4*self.max_reg - 1]
+        return self.data[:, -4*self.max_reg - 2]
     
     @override
     @property
@@ -195,7 +195,7 @@ class BoxDistribution(Boxes):
             - This property is only available when tracking is enabled (i.e., when `is_track` is True).
             - The tracking IDs are typically used to associate detections across multiple frames in video analysis.
         """
-        return self.data[:, -4 * self.max_reg - 3]
+        return self.data[:, -4 * self.max_reg - 4]
 
     @property
     def distribution(self) -> torch.Tensor | np.ndarray:
@@ -216,3 +216,14 @@ class BoxDistribution(Boxes):
             >>> top_dist = bbox_dists[0, 1*16: 2*16]  # Top side distribution for the first box
         """
         return self.data[:, -4 * self.max_reg:]
+    
+    @property
+    def stride(self) -> torch.Tensor | np.ndarray:
+        """
+        Return the stride values for each detection box.
+
+        Returns:
+            (torch.Tensor | np.ndarray): A 1D tensor or array containing the stride values for each detection box.
+                The shape is (N,), where N is the number of boxes.
+        """
+        return self.data[:, -4 * self.max_reg - 1]

@@ -47,7 +47,7 @@ class DetectDistribution(Detect):
             return dbox.transpose(1, 2), cls.sigmoid().permute(0, 2, 1)
         
         # dbox is mean of box distribution
-        return torch.cat((dbox, cls.sigmoid(), box_dist), 1)
+        return torch.cat((dbox, cls.sigmoid(), self.strides.unsqueeze(1), box_dist), 1)
 
     @classmethod
     def from_detect(cls, detect: Detect) -> DetectDistribution:

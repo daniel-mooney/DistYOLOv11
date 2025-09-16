@@ -62,16 +62,26 @@ def main(cfg_yaml: str) -> None:
                 r = np.exp(r) / np.sum(np.exp(r))
                 b = np.exp(b) / np.sum(np.exp(b))
 
-                print(f"left: {l}")
-                print(f"top: {t}")
-                print(f"right: {r}")
-                print(f"bottom: {b}")
+                print(f"Box {cls_id}, confidence {conf_score:.2f}, stride {box.stride[0].item()}:")
+                # print(f"left: {l}")
+                # print(f"top: {t}")
+                # print(f"right: {r}")
+                # print(f"bottom: {b}")
+                # print(box.data)
+                print("----")
+        
+        # Write the index in the top left corner
+        cv2.putText(disp, f"Image {idx+1}/{len(test_images)}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
         cv2.imshow(win, disp)
         k = cv2.waitKey(0) & 0xFF
-        if k == ord('q'):
+        if k in (ord("q"), 27):  # q or ESC
             break
-        idx += 1
+        elif k in (ord("n"), 83):  # n or Right arrow
+            idx = (idx + 1) % len(test_images)
+        elif k in (ord("p"), 81):  # p or Left arrow
+            idx = (idx - 1) % len(test_images)
+        
 
     cv2.destroyAllWindows()
 if __name__ == "__main__":
