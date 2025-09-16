@@ -54,7 +54,7 @@ def main(cfg_yaml: str) -> None:
                 cv2.putText(disp, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
                 dist = box.distribution[0].cpu().numpy()
-                l, t,r, b = np.split(dist, 4)
+                l, t, r, b = np.split(dist, 4)
 
                 # Perform softmax over each side's distribution
                 l = np.exp(l) / np.sum(np.exp(l))
@@ -62,12 +62,15 @@ def main(cfg_yaml: str) -> None:
                 r = np.exp(r) / np.sum(np.exp(r))
                 b = np.exp(b) / np.sum(np.exp(b))
 
+                stride = box.stride[0].item()
+
+
                 print(f"Box {cls_id}, confidence {conf_score:.2f}, stride {box.stride[0].item()}:")
                 # print(f"left: {l}")
                 # print(f"top: {t}")
                 # print(f"right: {r}")
                 # print(f"bottom: {b}")
-                # print(box.data)
+                
                 print("----")
         
         # Write the index in the top left corner
