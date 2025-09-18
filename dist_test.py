@@ -8,6 +8,24 @@ import cv2
 import numpy as np
 
 
+def dist_mean(p: np.ndarray, support: np.ndarray) -> float:
+    """Calculate the mean of a 1D discrete probability distribution
+
+    Args:
+        p (np.ndarray): An array of probabilities
+        support (np.ndarray): The distribution support
+
+    Returns:
+        float: The distribution mean
+    """
+    return np.sum(p * support)
+
+def dist_cov(p: np.ndarray, support: np.ndarray) -> float:
+    """Calculate the covariance of a discrete probability distribution"""
+    mean = dist_mean(p, support)
+    return np.sum(p * support**2) - mean**2
+
+
 def main(cfg_yaml: str) -> None:
     with open(cfg_yaml, 'r') as f:
         cfg = yaml.safe_load(f)
@@ -53,24 +71,34 @@ def main(cfg_yaml: str) -> None:
                 cv2.rectangle(disp, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.putText(disp, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-                dist = box.distribution[0].cpu().numpy()
-                l, t, r, b = np.split(dist, 4)
-
-                # Perform softmax over each side's distribution
-                l = np.exp(l) / np.sum(np.exp(l))
-                t = np.exp(t) / np.sum(np.exp(t))
-                r = np.exp(r) / np.sum(np.exp(r))
-                b = np.exp(b) / np.sum(np.exp(b))
-
-                stride = box.stride[0].item()
-
-
                 print(f"Box {cls_id}, confidence {conf_score:.2f}, stride {box.stride[0].item()}:")
-                # print(f"left: {l}")
-                # print(f"top: {t}")
-                # print(f"right: {r}")
-                # print(f"bottom: {b}")
+
+                # Print side statistics
+                dist = box.distribution[0].cpu().numpy()
+                support = np.arange(box.max_reg) * box.stride[0].cpu().item()
+
+                labels = ['left', 'top', 'right', 'bottom']
+
+                for i, side in enumerate(np.split(dist, 4)):
+                    side = np.exp(side) / np.sum(np.exp(side))      # softmax
+
+                    mean = dist_mean(side, support)
+                    cov = dist_cov(side, support)
+
+                    print(f"{labels[i]:<8} {mean=:6.2f}\t{cov=:6.2f}")
                 
+                width = (x2 - x1)
+                height = (y2 - y1)
+
+                print(f"{width=}")
+                print(f"{height=}", end="\n\n")
+
+                l, t, r, b = [np.exp(d) / np.sum(np.exp(d)) for d in np.split(dist, 4)]
+                print(f"{l=}")
+                print(f"{t=}")
+                print(f"{r=}")
+                print(f"{b=}")
+
                 print("----")
         
         # Write the index in the top left corner
